@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hqConfig() {
+      return get(/databases/$(database)/documents/hq_operators/hq_operator);
+    }
+
+    function isHqOperator() {
+      return isSignedIn()
+        && hqConfig().data.active != false
+        && request.auth.token.email != null
+        && request.auth.token.email in hqConfig().data.allowedEmails;
+    }
+
+    match /hq_operators/{docId} {
+      allow read: if isSignedIn() && docId == 'hq_operator';
+      allow write: if false;
+    }
+
+    match /activity_events/{eventId} {
+      allow create: if isSignedIn();
+      allow read: if isHqOperator();
+      allow update, delete: if false;
+    }
+
+    match /personnel/{document} {
+      allow read, write: if true;
+    }
+
+    match /dependents/{document} {
+      allow read, write: if true;
+    }
+
+    match /connection_requests/{document} {
+      allow read, create, update: if isSignedIn();
+    }
+
+    match /group_invitations/{document} {
+      allow read, create, update: if isSignedIn();
+    }
+
+    match /chats/{chatId} {
+      allow read, create, update: if isSignedIn();
+
+      match /messages/{messageId} {
+        allow read, create: if isSignedIn() && !isHqOperator();
+      }
+    }
+  }
+}
