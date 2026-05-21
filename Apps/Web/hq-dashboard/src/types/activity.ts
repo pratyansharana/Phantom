@@ -45,6 +45,17 @@ export type DistressAlert = {
   email: string;
   subtitle?: string;
   status: 'active' | 'resolved';
+  location?: {
+    available?: boolean;
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number | null;
+    altitude?: number | null;
+    heading?: number | null;
+    speed?: number | null;
+    capturedAt?: string;
+    reason?: string;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 };

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
+import * as Location from 'expo-location';
 import { User } from 'firebase/auth';
 import {
   addDoc,
@@ -640,6 +641,41 @@ export const eraseChatForEveryone = async (currentUser: User, profile: Directory
 };
 
 export const sendDistressAlert = async (currentUser: User, profile: DirectoryUser) => {
+  let locationDetails: Record<string, unknown> = {
+    available: false,
+    reason: 'not_requested',
+  };
+
+  try {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.granted) {
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      locationDetails = {
+        available: true,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        altitude: position.coords.altitude,
+        heading: position.coords.heading,
+        speed: position.coords.speed,
+        capturedAt: new Date(position.timestamp).toISOString(),
+      };
+    } else {
+      locationDetails = {
+        available: false,
+        reason: 'permission_denied',
+      };
+    }
+  } catch (error: any) {
+    locationDetails = {
+      available: false,
+      reason: error?.message || 'location_unavailable',
+    };
+  }
+
   const alertRef = await addDoc(collection(db, 'distress_alerts'), {
     uid: currentUser.uid,
     profilePath: profile.path,
@@ -649,6 +685,7 @@ export const sendDistressAlert = async (currentUser: User, profile: DirectoryUse
     collectionName: profile.collectionName,
     status: 'active',
     source: 'mobile',
+    location: locationDetails,
     created_at: serverTimestamp(),
     updated_at: serverTimestamp(),
   });
@@ -659,6 +696,7 @@ export const sendDistressAlert = async (currentUser: User, profile: DirectoryUse
     metadata: {
       status: 'active',
       source: 'mobile',
+      locationAvailable: locationDetails.available === true,
     },
   });
 

@@ -35,7 +35,18 @@
           "cameraPermission": "Phantom needs camera access to capture encrypted media.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Phantom needs your location to send distress alerts to HQ."
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "739e17bd-d1db-4033-bb57-1e67fdb44fda"
+      }
+    }
   }
 }

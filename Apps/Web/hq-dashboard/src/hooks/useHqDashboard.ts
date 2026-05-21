@@ -102,6 +102,7 @@ export const useHqDashboard = (enabled: boolean) => {
             email: data.email,
             subtitle: data.subtitle,
             status: data.status || 'active',
+            location: data.location,
             createdAt: toDate(data.created_at),
             updatedAt: toDate(data.updated_at),
           } as DistressAlert;
