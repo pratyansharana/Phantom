@@ -21,6 +21,7 @@ import {
   ChatMessage,
   DirectoryUser,
   EncryptedMedia,
+  eraseChatForEveryone,
   ensureKyberIdentity,
   getChatDetails,
   getCurrentProfile,
@@ -44,6 +45,7 @@ export default function ChatScreen({ navigation, route }: { navigation: any; rou
   const [chatDetails, setChatDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [erasing, setErasing] = useState(false);
   const [pickingMedia, setPickingMedia] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
@@ -117,7 +119,7 @@ export default function ChatScreen({ navigation, route }: { navigation: any; rou
       if (result.canceled || !result.assets?.[0]) return;
 
       const asset = result.assets[0];
-      if (asset.mimeType?.startsWith('audio/') || asset.type === 'audio') {
+      if (asset.mimeType?.startsWith('audio/')) {
         Alert.alert('Not supported', 'Audio messages are disabled. Send text, photos, or videos only.');
         return;
       }
@@ -200,6 +202,33 @@ export default function ChatScreen({ navigation, route }: { navigation: any; rou
     }
   };
 
+  const confirmEraseChat = () => {
+    if (!currentUser || !profile || !chatId || erasing) return;
+
+    Alert.alert(
+      'Erase chat for everyone?',
+      'This permanently deletes this chat and all messages for every member.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Erase',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setErasing(true);
+              await eraseChatForEveryone(currentUser, profile, chatId);
+              navigation.replace('Home');
+            } catch (error: any) {
+              Alert.alert('Erase failed', error.message || 'Unable to erase this chat.');
+            } finally {
+              setErasing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -225,8 +254,12 @@ export default function ChatScreen({ navigation, route }: { navigation: any; rou
               <Text style={styles.subtitle}>Kyber encrypted</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="call-outline" size={22} color="#FFFFFF" />
+          <TouchableOpacity style={[styles.headerButton, styles.headerDangerButton]} onPress={confirmEraseChat} disabled={erasing}>
+            {erasing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="trash-outline" size={21} color="#FFFFFF" />
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="ellipsis-vertical" size={21} color="#FFFFFF" />
@@ -323,6 +356,7 @@ const styles = StyleSheet.create({
   title: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
   subtitle: { color: '#CBD5E1', fontSize: 12, marginTop: 1 },
   headerButton: { width: 38, height: 44, alignItems: 'center', justifyContent: 'center' },
+  headerDangerButton: { borderRadius: 19, backgroundColor: '#B91C1C', height: 38, marginRight: 2 },
   chatArea: { flex: 1 },
   listContent: { paddingHorizontal: 10, paddingTop: 12, paddingBottom: 10, flexGrow: 1 },
   messageRow: { marginVertical: 3, flexDirection: 'row' },

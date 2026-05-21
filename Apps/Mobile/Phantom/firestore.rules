@@ -5,15 +5,15 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function hqConfig() {
-      return get(/databases/$(database)/documents/hq_operators/hq_operator);
-    }
-
     function isHqOperator() {
       return isSignedIn()
-        && hqConfig().data.active != false
         && request.auth.token.email != null
-        && request.auth.token.email in hqConfig().data.allowedEmails;
+        && request.auth.token.email == 'pratyanshrana1@gmail.com';
+    }
+
+    function isChatMember(chatId) {
+      return isSignedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberUids;
     }
 
     match /hq_operators/{docId} {
@@ -25,6 +25,12 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read: if isHqOperator();
       allow update, delete: if false;
+    }
+
+    match /distress_alerts/{alertId} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update: if isHqOperator();
+      allow delete: if false;
     }
 
     match /personnel/{document} {
@@ -45,9 +51,12 @@ service cloud.firestore {
 
     match /chats/{chatId} {
       allow read, create, update: if isSignedIn();
+      allow delete: if isChatMember(chatId) || isHqOperator();
 
       match /messages/{messageId} {
-        allow read, create: if isSignedIn() && !isHqOperator();
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && !isHqOperator();
+        allow delete: if isChatMember(chatId) || isHqOperator();
       }
     }
   }

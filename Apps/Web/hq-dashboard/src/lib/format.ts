@@ -10,6 +10,8 @@ const EVENT_LABELS: Record<ActivityEventType, string> = {
   group_invite_declined: 'Group invite declined',
   direct_chat_created: 'Direct chat opened',
   message_sent: 'Encrypted message sent',
+  chat_erased: 'Chat erased',
+  distress_signal_sent: 'Distress signal sent',
 };
 
 export const labelForEvent = (type: ActivityEventType) => EVENT_LABELS[type] ?? type;

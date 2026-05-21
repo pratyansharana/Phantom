@@ -26,6 +26,7 @@ import {
     ensureKyberIdentity,
     getCurrentProfile,
     loadDirectoryUsers,
+    sendDistressAlert,
     sendConnectionRequest,
     subscribeInbox,
 } from '../services/secureMessaging';
@@ -102,6 +103,33 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
     const handleLogout = async () => {
         await signOut(auth);
         navigation.replace('Login');
+    };
+
+    const sendDistress = () => {
+        if (!currentUser || !profile || busy) return;
+
+        Alert.alert(
+            'Send distress signal?',
+            'HQ will receive an active distress alert with your profile details.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Send',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setBusy(true);
+                            await sendDistressAlert(currentUser, profile);
+                            Alert.alert('Distress sent', 'HQ has been notified.');
+                        } catch (error: any) {
+                            Alert.alert('Distress failed', error.message || 'Unable to send distress signal.');
+                        } finally {
+                            setBusy(false);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const requestConnection = async (person: DirectoryUser) => {
@@ -287,6 +315,9 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
                         <TouchableOpacity style={styles.iconButton} onPress={() => setGroupModalVisible(true)}>
                             <Ionicons name="people-circle-outline" size={25} color="#F8FAFC" />
                         </TouchableOpacity>
+                        <TouchableOpacity style={[styles.iconButton, styles.distressIconButton]} onPress={sendDistress} disabled={busy}>
+                            <MaterialCommunityIcons name="alarm-light-outline" size={22} color="#FFFFFF" />
+                        </TouchableOpacity>
                         <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
                             <Ionicons name="log-out-outline" size={22} color="#F8FAFC" />
                         </TouchableOpacity>
@@ -312,6 +343,10 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
                     <TouchableOpacity style={styles.quickAction} onPress={() => setGroupModalVisible(true)}>
                         <Ionicons name="people" size={19} color="#E0E7FF" />
                         <Text style={styles.quickActionText}>New Group</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.quickAction, styles.distressAction]} onPress={sendDistress} disabled={busy}>
+                        <MaterialCommunityIcons name="alarm-light" size={18} color="#FEE2E2" />
+                        <Text style={styles.quickActionText}>Distress</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -412,6 +447,7 @@ const styles = StyleSheet.create({
     headerSub: { color: '#CBD5E1', fontSize: 12, marginTop: 2, maxWidth: 220 },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
+    distressIconButton: { backgroundColor: '#B91C1C' },
     searchWrap: {
         marginHorizontal: 14,
         marginTop: 12,
@@ -440,6 +476,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 7,
     },
+    distressAction: { backgroundColor: '#B91C1C' },
     quickActionText: {
         color: '#FFFFFF',
         fontSize: 14,

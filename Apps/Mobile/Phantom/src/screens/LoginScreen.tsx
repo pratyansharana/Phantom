@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebaseconfig';
-import { signInWithGoogle } from '../services/googleAuth';
 
 export default function LoginScreen({ navigation }: { navigation: any }) {
     const [email, setEmail] = useState('');
@@ -41,22 +40,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
             alert('Login failed. Please check your credentials and try again.');
         } finally {
             setLoading(false); 
-        }
-    };
-
-    const handleGoogleLogin = async () => {
-        Keyboard.dismiss();
-        setLoading(true);
-
-        try {
-            const user = await signInWithGoogle();
-            console.log('Google sign-in token ready for:', user.email);
-            navigation.replace('Home');
-        } catch (error: any) {
-            console.error('Google login error:', error);
-            alert(error?.message || 'Google sign-in failed.');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -137,20 +120,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
                                 )}
                             </TouchableOpacity>
 
-                            {/* Divider */}
-                            <View style={styles.dividerContainer}>
-                                <View style={styles.dividerLine} />
-                                <Text style={styles.dividerText}>OR</Text>
-                                <View style={styles.dividerLine} />
-                            </View>
-
-                            <TouchableOpacity 
-                                style={styles.secondaryButton} 
-                                onPress={handleGoogleLogin}
-                                disabled={loading}
-                            >
-                                <Text style={styles.secondaryButtonText}>Continue with Google</Text>
-                            </TouchableOpacity>
                         </View>
 
                         {/* Footer */}
@@ -316,36 +285,6 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '700',
-    },
-    dividerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 24,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: '#E5E7EB',
-    },
-    dividerText: {
-        color: '#6B7280',
-        paddingHorizontal: 16,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    secondaryButton: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        height: 56,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    secondaryButtonText: {
-        color: '#374151',
-        fontSize: 16,
-        fontWeight: '600',
     },
     footerContainer: {
         flexDirection: 'row',

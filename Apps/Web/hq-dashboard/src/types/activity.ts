@@ -7,7 +7,9 @@ export type ActivityEventType =
   | 'group_invite_accepted'
   | 'group_invite_declined'
   | 'direct_chat_created'
-  | 'message_sent';
+  | 'message_sent'
+  | 'chat_erased'
+  | 'distress_signal_sent';
 
 export type ActivityEvent = {
   id: string;
@@ -30,6 +32,35 @@ export type ChatMonitorRow = {
   name?: string;
   memberCount: number;
   memberNames: string[];
+  memberProfilePaths: string[];
   updatedAt?: Date;
   createdAt?: Date;
+};
+
+export type DistressAlert = {
+  id: string;
+  uid: string;
+  profilePath: string;
+  name: string;
+  email: string;
+  subtitle?: string;
+  status: 'active' | 'resolved';
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type UserDetails = {
+  id: string;
+  path: string;
+  collectionName: 'personnel' | 'dependents';
+  name: string;
+  email: string;
+  phone?: string;
+  serviceNumber?: string;
+  dependentCardNumber?: string;
+  militaryProfile?: Record<string, unknown>;
+  relationshipProfile?: Record<string, unknown>;
+  personalInformation?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  authentication?: Record<string, unknown>;
 };

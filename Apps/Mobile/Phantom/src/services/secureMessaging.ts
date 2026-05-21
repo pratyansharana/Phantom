@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 import { User } from 'firebase/auth';
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -13,7 +15,9 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
+import { Platform } from 'react-native';
 import { db } from '../config/firebaseconfig';
 import { logActivityForUser } from './activityLog';
 
@@ -96,17 +100,14 @@ const privateKeyStorageKey = (uid: string) => `phantom.kyber.privateKey.${uid}`;
 let kyberRuntime: any | null | undefined;
 
 const randomBytes = (length: number) => {
-  const bytes = new Uint8Array(length);
   const cryptoObject = (globalThis as any).crypto;
   if (cryptoObject?.getRandomValues) {
+    const bytes = new Uint8Array(length);
     cryptoObject.getRandomValues(bytes);
     return bytes;
   }
 
-  for (let i = 0; i < length; i += 1) {
-    bytes[i] = Math.floor(Math.random() * 256);
-  }
-  return bytes;
+  return Crypto.getRandomBytes(length);
 };
 
 const bytesToBase64 = (bytes: Uint8Array) => {
@@ -162,6 +163,11 @@ const mixBytes = (seed: Uint8Array, length = 32) => {
 
 const getKyberRuntime = async () => {
   if (kyberRuntime !== undefined) return kyberRuntime;
+
+  if (Platform.OS !== 'web') {
+    kyberRuntime = null;
+    return kyberRuntime;
+  }
 
   try {
     kyberRuntime = require('kyber-crystals').kyber;
@@ -587,6 +593,76 @@ export const declineGroupInvitation = async (
     metadata: { groupName: invitation.groupName },
     requestId: invitation.id,
   });
+};
+
+export const eraseChatForEveryone = async (currentUser: User, profile: DirectoryUser, chatId: string) => {
+  const chatRef = doc(db, 'chats', chatId);
+  const chatSnapshot = await getDoc(chatRef);
+  if (!chatSnapshot.exists()) return;
+
+  const chat = chatSnapshot.data();
+  if (!Array.isArray(chat.memberUids) || !chat.memberUids.includes(currentUser.uid)) {
+    throw new Error('Only chat members can erase this chat.');
+  }
+
+  const messagesSnapshot = await getDocs(collection(db, 'chats', chatId, 'messages'));
+  const batches: ReturnType<typeof writeBatch>[] = [];
+  let batch = writeBatch(db);
+  let writes = 0;
+
+  messagesSnapshot.docs.forEach(message => {
+    if (writes === 450) {
+      batches.push(batch);
+      batch = writeBatch(db);
+      writes = 0;
+    }
+    batch.delete(message.ref);
+    writes += 1;
+  });
+
+  if (writes > 0) batches.push(batch);
+  for (const pendingBatch of batches) {
+    await pendingBatch.commit();
+  }
+
+  await deleteDoc(chatRef);
+
+  await logActivityForUser(currentUser, profile, {
+    type: 'chat_erased',
+    chatId,
+    chatType: chat.type || 'direct',
+    metadata: {
+      erasedMessageCount: messagesSnapshot.size,
+      memberCount: chat.memberUids.length,
+      erasedByMember: true,
+    },
+  });
+};
+
+export const sendDistressAlert = async (currentUser: User, profile: DirectoryUser) => {
+  const alertRef = await addDoc(collection(db, 'distress_alerts'), {
+    uid: currentUser.uid,
+    profilePath: profile.path,
+    name: profile.name,
+    email: profile.email,
+    subtitle: profile.subtitle,
+    collectionName: profile.collectionName,
+    status: 'active',
+    source: 'mobile',
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+  });
+
+  await logActivityForUser(currentUser, profile, {
+    type: 'distress_signal_sent',
+    requestId: alertRef.id,
+    metadata: {
+      status: 'active',
+      source: 'mobile',
+    },
+  });
+
+  return alertRef.id;
 };
 
 export const encryptMessageForChat = async (chatId: string, payload: { text: string; media?: EncryptedMedia }) => {

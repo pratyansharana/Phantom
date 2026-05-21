@@ -12,7 +12,9 @@ export type ActivityEventType =
   | 'group_invite_accepted'
   | 'group_invite_declined'
   | 'direct_chat_created'
-  | 'message_sent';
+  | 'message_sent'
+  | 'chat_erased'
+  | 'distress_signal_sent';
 
 type ActivityPayload = {
   type: ActivityEventType;

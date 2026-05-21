@@ -91,6 +91,15 @@ input {
   font-size: 28px;
 }
 
+.danger-stat {
+  border-color: #7f1d1d;
+  background: #1f1111;
+}
+
+.danger-stat strong {
+  color: #fca5a5;
+}
+
 .panel {
   background: #111827;
   border: 1px solid #1f2937;
@@ -156,6 +165,16 @@ input {
   color: #ffedd5;
 }
 
+.pill.active {
+  background: #991b1b;
+  color: #fee2e2;
+}
+
+.pill.resolved {
+  background: #334155;
+  color: #cbd5e1;
+}
+
 .login-card,
 .denied-card {
   width: min(420px, 100%);
@@ -199,7 +218,9 @@ input {
 }
 
 .primary-btn,
-.ghost-btn {
+.ghost-btn,
+.danger-btn,
+.link-btn {
   border: none;
   border-radius: 8px;
   padding: 10px 14px;
@@ -217,6 +238,78 @@ input {
   background: transparent;
   color: #cbd5e1;
   border: 1px solid #334155;
+}
+
+.danger-btn {
+  background: #991b1b;
+  color: #fee2e2;
+}
+
+.compact {
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
+.link-btn {
+  padding: 0;
+  background: transparent;
+  color: #bfdbfe;
+}
+
+.muted {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.distress-panel {
+  border-color: #7f1d1d;
+}
+
+.alert-row {
+  background: rgba(127, 29, 29, 0.24);
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.details-grid div {
+  background: #0f172a;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.details-grid span {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.details-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #f8fafc;
+  word-break: break-word;
+}
+
+.details-json {
+  margin: 0;
+  padding: 16px;
+  border-top: 1px solid #1f2937;
+  color: #cbd5e1;
+  background: #0f172a;
+  overflow: auto;
+  font-size: 12px;
 }
 
 .notice {

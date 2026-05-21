@@ -15,7 +15,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: config.slug ?? 'phantom',
     extra: {
       ...config.extra,
-      googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     },
     ios: {
       ...config.ios,
