@@ -43,6 +43,28 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
         }
     };
 
+    const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
+        setEmail(demoEmail);
+        setPassword(demoPassword);
+        
+        Keyboard.dismiss(); 
+        setLoading(true);
+
+        signInWithEmailAndPassword(auth, demoEmail, demoPassword)
+            .then(async (userCredential) => {
+                await userCredential.user.getIdToken(true);
+                console.log('User logged in (Demo):', userCredential.user.email);
+                navigation.replace('Home'); 
+            })
+            .catch((error) => {
+                console.error('Demo Login error:', error);
+                alert('Demo Login failed. Please check your credentials and try again.');
+            })
+            .finally(() => {
+                setLoading(false); 
+            });
+    };
+
     return (
         <View style={styles.mainContainer}>
             {/* Background Decorative Shapes */}
@@ -51,7 +73,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
             <View style={styles.circleTwo} />
 
             <SafeAreaView style={styles.safeArea}>
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss} disabled={Platform.OS === 'web'}>
                     <KeyboardAvoidingView 
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                         style={styles.container}
@@ -120,6 +142,26 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
                                 )}
                             </TouchableOpacity>
 
+                            {/* Demo Recruiter Access */}
+                            <View style={styles.demoSectionContainer}>
+                                <Text style={styles.demoTitleText}>Recruiter Quick Check Ledger</Text>
+                                <View style={styles.demoButtonsRow}>
+                                    <TouchableOpacity 
+                                        style={styles.demoButton} 
+                                        onPress={() => handleDemoLogin('ishwar.seth@defence.gov.in', '12345678')}
+                                        disabled={loading}
+                                    >
+                                        <Text style={styles.demoButtonText}>User 1 (Personnel)</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={styles.demoButton} 
+                                        onPress={() => handleDemoLogin('quincy.rao@defence.gov.in', '12345678')}
+                                        disabled={loading}
+                                    >
+                                        <Text style={styles.demoButtonText}>User 2 (Dependent)</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
 
                         {/* Footer */}
@@ -301,5 +343,47 @@ const styles = StyleSheet.create({
         color: '#4F46E5',
         fontSize: 15,
         fontWeight: '700',
+    },
+    demoSectionContainer: {
+        marginTop: 20,
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 16,
+        backgroundColor: '#F3F4F6',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    demoTitleText: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: '#6B7280',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        marginBottom: 10,
+    },
+    demoButtonsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        width: '100%',
+    },
+    demoButton: {
+        flex: 1,
+        height: 42,
+        borderRadius: 10,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#D1D5DB',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    demoButtonText: {
+        color: '#4F46E5',
+        fontSize: 12,
+        fontWeight: '800',
     },
 });

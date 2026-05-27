@@ -10,10 +10,10 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    ScrollView,
-    Alert
+    ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { customAlert as Alert } from '../utils/customAlert';
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseconfig';
@@ -163,7 +163,7 @@ export default function SignupScreen({ navigation }: { navigation: any }) {
             <View style={styles.circleTwo} />
 
             <SafeAreaView style={styles.safeArea}>
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss} disabled={Platform.OS === 'web'}>
                     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                             

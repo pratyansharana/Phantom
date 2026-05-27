@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     StyleSheet,
@@ -11,6 +10,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { customAlert as Alert } from '../utils/customAlert';
 import { signOut } from 'firebase/auth';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { auth } from '../config/firebaseconfig';
@@ -99,6 +99,14 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
             person.subtitle.toLowerCase().includes(term)
         );
     }, [people, search]);
+
+    const filteredChats = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return chats;
+        return chats.filter(chat =>
+            chat.title.toLowerCase().includes(term)
+        );
+    }, [chats, search]);
 
     const handleLogout = async () => {
         await signOut(auth);
@@ -289,7 +297,7 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
         </View>
     );
 
-    const data = activeTab === 'chats' ? chats : activeTab === 'people' ? filteredPeople : activeTab === 'requests' ? requests : groupInvites;
+    const data = activeTab === 'chats' ? filteredChats : activeTab === 'people' ? filteredPeople : activeTab === 'requests' ? requests : groupInvites;
 
     if (loading) {
         return (
@@ -330,7 +338,7 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
                         style={styles.searchInput}
                         value={search}
                         onChangeText={setSearch}
-                        placeholder="Search people"
+                        placeholder={activeTab === 'people' ? "Search military database..." : "Search..."}
                         placeholderTextColor="#64748B"
                     />
                 </View>
@@ -367,14 +375,20 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
                 <FlatList
                     data={data as any[]}
                     renderItem={activeTab === 'chats' ? renderChat as any : activeTab === 'people' ? renderPerson as any : activeTab === 'requests' ? renderRequest as any : renderGroupInvite as any}
-                    keyExtractor={item => item.id}
+                    keyExtractor={item => item.id || item.path}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyTitle}>Nothing here yet</Text>
+                            <Text style={styles.emptyTitle}>
+                                {activeTab === 'people' ? 'No records found' : 'Nothing here yet'}
+                            </Text>
                             <Text style={styles.emptyText}>
-                                {activeTab === 'chats' ? 'Accept a request or create a group to start.' : 'Check another section.'}
+                                {activeTab === 'chats' 
+                                    ? (search.trim() ? 'No matching secure chats found.' : 'Accept a request or create a group to start.')
+                                    : activeTab === 'people' 
+                                        ? 'No military personnel/dependent found on the military database' 
+                                        : 'Check another section.'}
                             </Text>
                         </View>
                     }

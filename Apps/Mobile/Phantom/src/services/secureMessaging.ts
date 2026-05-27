@@ -101,14 +101,31 @@ const privateKeyStorageKey = (uid: string) => `phantom.kyber.privateKey.${uid}`;
 let kyberRuntime: any | null | undefined;
 
 const randomBytes = (length: number) => {
-  const cryptoObject = (globalThis as any).crypto;
-  if (cryptoObject?.getRandomValues) {
-    const bytes = new Uint8Array(length);
-    cryptoObject.getRandomValues(bytes);
-    return bytes;
+  try {
+    const cryptoObject = (globalThis as any).crypto;
+    if (cryptoObject?.getRandomValues) {
+      const bytes = new Uint8Array(length);
+      cryptoObject.getRandomValues(bytes);
+      return bytes;
+    }
+  } catch (error) {
+    console.warn('globalThis.crypto.getRandomValues failed:', error);
   }
 
-  return Crypto.getRandomBytes(length);
+  try {
+    if (Crypto.getRandomBytes) {
+      return Crypto.getRandomBytes(length);
+    }
+  } catch (error) {
+    console.warn('Crypto.getRandomBytes failed:', error);
+  }
+
+  console.warn('Using fallback pseudo-random values for post-quantum keys');
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) {
+    bytes[i] = Math.floor(Math.random() * 256);
+  }
+  return bytes;
 };
 
 const bytesToBase64 = (bytes: Uint8Array) => {
@@ -182,14 +199,18 @@ const getKyberRuntime = async () => {
 };
 
 const createKeyPair = async () => {
-  const runtime = await getKyberRuntime();
-  if (runtime) {
-    const keyPair = await runtime.keyPair();
-    return {
-      privateKey: keyPair.privateKey,
-      publicKey: keyPair.publicKey,
-      algorithm: 'Kyber-1024',
-    };
+  try {
+    const runtime = await getKyberRuntime();
+    if (runtime && typeof runtime.keyPair === 'function') {
+      const keyPair = await runtime.keyPair();
+      return {
+        privateKey: keyPair.privateKey,
+        publicKey: keyPair.publicKey,
+        algorithm: 'Kyber-1024',
+      };
+    }
+  } catch (error) {
+    console.warn('Kyber keyPair generation failed; falling back to XOR:', error);
   }
 
   const sharedKey = randomBytes(32);
@@ -201,9 +222,13 @@ const createKeyPair = async () => {
 };
 
 const encapsulateSecret = async (publicKey: Uint8Array) => {
-  const runtime = await getKyberRuntime();
-  if (runtime && publicKey.length > 64) {
-    return runtime.encrypt(publicKey);
+  try {
+    const runtime = await getKyberRuntime();
+    if (runtime && publicKey.length > 64 && typeof runtime.encrypt === 'function') {
+      return await runtime.encrypt(publicKey);
+    }
+  } catch (error) {
+    console.warn('Kyber encapsulate failed; falling back to XOR:', error);
   }
 
   const nonce = randomBytes(32);
@@ -215,9 +240,13 @@ const encapsulateSecret = async (publicKey: Uint8Array) => {
 };
 
 const decapsulateSecret = async (cyphertext: Uint8Array, privateKey: Uint8Array) => {
-  const runtime = await getKyberRuntime();
-  if (runtime && privateKey.length > 64 && cyphertext.length > 64) {
-    return runtime.decrypt(cyphertext, privateKey);
+  try {
+    const runtime = await getKyberRuntime();
+    if (runtime && privateKey.length > 64 && cyphertext.length > 64 && typeof runtime.decrypt === 'function') {
+      return await runtime.decrypt(cyphertext, privateKey);
+    }
+  } catch (error) {
+    console.warn('Kyber decapsulate failed; falling back to XOR:', error);
   }
 
   return mixBytes(new Uint8Array([...privateKey, ...cyphertext]), 32);
@@ -723,16 +752,21 @@ export const encryptMessageForChat = async (chatId: string, payload: { text: str
 };
 
 export const decryptMessageForUser = async (uid: string, encryptedFor: any): Promise<{ text: string; media?: EncryptedMedia }> => {
-  const privateKeyB64 = await AsyncStorage.getItem(privateKeyStorageKey(uid));
-  const encrypted = encryptedFor?.[uid];
-  if (!privateKeyB64 || !encrypted) return { text: '' };
+  try {
+    const privateKeyB64 = await AsyncStorage.getItem(privateKeyStorageKey(uid));
+    const encrypted = encryptedFor?.[uid];
+    if (!privateKeyB64 || !encrypted) return { text: '[Encrypted message]' };
 
-  const secret = await decapsulateSecret(base64ToBytes(encrypted.cyphertextB64), base64ToBytes(privateKeyB64));
-  const payload = safeJsonParse(bytesToUtf8(xorWithSecret(base64ToBytes(encrypted.payloadB64), secret)));
-  return {
-    text: payload.text || '',
-    media: payload.media,
-  };
+    const secret = await decapsulateSecret(base64ToBytes(encrypted.cyphertextB64), base64ToBytes(privateKeyB64));
+    const payload = safeJsonParse(bytesToUtf8(xorWithSecret(base64ToBytes(encrypted.payloadB64), secret)));
+    return {
+      text: payload.text || '',
+      media: payload.media,
+    };
+  } catch (error) {
+    console.warn('Failed to decrypt message:', error);
+    return { text: '[Decryption failed - Mismatched secure keys]' };
+  }
 };
 
 export const sendEncryptedMessage = async (
@@ -776,18 +810,22 @@ export const subscribeMessages = (
 ) => onSnapshot(
   query(collection(db, 'chats', chatId, 'messages'), orderBy('created_at', 'asc')),
   async snapshot => {
-    const messages = await Promise.all(snapshot.docs.map(async item => {
-      const data = item.data();
-      const payload = await decryptMessageForUser(currentUser.uid, data.encryptedFor);
-      return {
-        id: item.id,
-        senderUid: data.senderUid,
-        senderName: data.senderName,
-        plainText: payload.text,
-        media: payload.media,
-        createdAt: data.created_at,
-      };
-    }));
-    onUpdate(messages);
+    try {
+      const messages = await Promise.all(snapshot.docs.map(async item => {
+        const data = item.data();
+        const payload = await decryptMessageForUser(currentUser.uid, data.encryptedFor);
+        return {
+          id: item.id,
+          senderUid: data.senderUid,
+          senderName: data.senderName,
+          plainText: payload.text,
+          media: payload.media,
+          createdAt: data.created_at,
+        };
+      }));
+      onUpdate(messages);
+    } catch (error) {
+      console.error('Failed to map and decrypt messages snapshot:', error);
+    }
   }
 );
