@@ -130,18 +130,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
 
                         {/* Action Section */}
                         <View style={styles.actionContainer}>
-                            <TouchableOpacity 
-                                style={[styles.primaryButton, loading && styles.primaryButtonDisabled]} 
-                                onPress={handleLogin}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <ActivityIndicator color="#ffffff" />
-                                ) : (
-                                    <Text style={styles.primaryButtonText}>Sign In</Text>
-                                )}
-                            </TouchableOpacity>
-
                             {/* Demo Recruiter Access */}
                             <View style={styles.demoSectionContainer}>
                                 <Text style={styles.demoTitleText}>Recruiter Quick Check Ledger</Text>
@@ -162,6 +150,18 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
                                     </TouchableOpacity>
                                 </View>
                             </View>
+
+                            <TouchableOpacity 
+                                style={[styles.primaryButton, loading && styles.primaryButtonDisabled]} 
+                                onPress={handleLogin}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#ffffff" />
+                                ) : (
+                                    <Text style={styles.primaryButtonText}>Sign In</Text>
+                                )}
+                            </TouchableOpacity>
                         </View>
 
                         {/* Footer */}
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     demoSectionContainer: {
-        marginTop: 20,
+        marginBottom: 20,
         alignItems: 'center',
         padding: 12,
         borderRadius: 16,
