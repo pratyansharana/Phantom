@@ -4,7 +4,7 @@ import { initializeApp } from 'firebase/app';
 import {
   initializeAuth,
   getReactNativePersistence
-} from 'firebase/auth/react-native';
+} from '@firebase/auth/dist/rn/index.js';
 
 import {
   getFirestore
