@@ -277,7 +277,7 @@ export default function ChatScreen({ navigation, route }: { navigation: any; rou
             renderItem={renderMessage}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
             onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
             ListEmptyComponent={
               <View style={styles.emptyState}>

@@ -165,7 +165,7 @@ export default function SignupScreen({ navigation }: { navigation: any }) {
             <SafeAreaView style={styles.safeArea}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} disabled={Platform.OS === 'web'}>
                     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+                        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={true}>
                             
                             <View style={styles.headerContainer}>
                                 <Text style={styles.title}>Verify Account</Text>

@@ -377,7 +377,7 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
                     renderItem={activeTab === 'chats' ? renderChat as any : activeTab === 'people' ? renderPerson as any : activeTab === 'requests' ? renderRequest as any : renderGroupInvite as any}
                     keyExtractor={item => item.id || item.path}
                     contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator={true}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyTitle}>
